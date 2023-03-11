@@ -998,3 +998,13 @@ insert into person (id, first_name, last_name, email, gender, ip_address, birthd
 insert into person (id, first_name, last_name, email, gender, ip_address, birthdate) values (998, 'Alphard', 'Hatchette', 'ahatchetterp@studiopress.com', 'Male', '141.67.16.9', '2009-05-13');
 insert into person (id, first_name, last_name, email, gender, ip_address, birthdate) values (999, 'Alessandro', 'Duns', 'adunsrq@theatlantic.com', 'Male', '231.56.126.21', '1992-10-16');
 insert into person (id, first_name, last_name, email, gender, ip_address, birthdate) values (1000, 'Wilbur', 'Everit', 'weveritrr@ning.com', 'Polygender', '36.227.72.33', '1955-08-17');
+
+insert into country (id, name, code) values (1,'Croatia', 'HRV');
+insert into country (id, name, code) values (2, 'India', 'IND');
+insert into country (id, name, code) values (3, 'United States of America', 'USA');
+insert into country (id, name, code) values (4, 'Canada', 'CAN');
+
+update person set country_id = 1 where id >= 1 and id <= 250;
+update person set country_id = 2 where id > 250 and id <= 500;
+update person set country_id = 3 where id > 500 and id <= 750;
+update person set country_id = 4 where id > 750 and id <= 1000;

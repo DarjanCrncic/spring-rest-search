@@ -12,14 +12,17 @@ import java.util.regex.Pattern;
 @Log4j2
 public class SpecificationBuilder<T> {
 	
-	public static final String OR_OPERATOR = "~";
-	public static final String AND_OPERATOR = ",";
-	public static final String searchRegex = "(\\w+)(:|<|>|!|<=|>=)([\\w|\\-|\\/]+)";
-	public static final String numRegex = "(\\d)([,|~]?)";
+	public static final String OR_OPERATOR = "or";
+	public static final String AND_OPERATOR = "and";
+	public static final String SEPARATOR = "~";
+	public static final String searchRegex = "(\\b(?!and|or|AND|OR\\b)[\\w\\.]+)~(\\w+)~([\\w|\\-|\\/|\\,|\\.]+)";
+	public static final String numRegex = "(\\d)~?(\\b(and|or|AND|OR\\b))?";
+	public static final String complexNumExpression = "(\\d)~(\\b(and|or|AND|OR\\b))~(\\d)";
 
-	Map<String, String> map = new LinkedHashMap<>();
-	Map<String, SearchCriteria> criteriaMap = new HashMap<>();
-	Map<String, Specification<T>> specMap = new LinkedHashMap<>();
+
+	Map<Integer, String> parsedSearchMap = new LinkedHashMap<>(); // stores string subcomponents of the search
+	Map<Integer, SearchCriteria> criteriaMap = new HashMap<>(); // stores search criteria objects
+	Map<Integer, Specification<T>> specMap = new LinkedHashMap<>(); // stores generated specifications
 
 
 	private final Providable<T> specProvider;
@@ -29,9 +32,13 @@ public class SpecificationBuilder<T> {
 	}
 
 	public Specification<T> parse(String search) {
-		long numOfLB = search.chars().filter(ch -> ch == '(').count();
-		long numOfRB = search.chars().filter(ch -> ch == ')').count();
-		if (numOfLB != numOfRB) throw new RuntimeException("Search string invalid, parenthesis not matching.");
+		String parsingResult = parseSearchString(search);
+		return buildSpecFromSymbolicString(parsingResult);
+	}
+
+	protected String parseSearchString(String search) {
+		long parenthesisCount = validateParenthesis(search);
+		log.info("parenthesis count: {}", parenthesisCount);
 
 		Pattern pattern = Pattern.compile(searchRegex);
 		Matcher matcher = pattern.matcher(search);
@@ -39,35 +46,43 @@ public class SpecificationBuilder<T> {
 
 		// find all strings that match search criteria
 		while(matcher.find()) {
-			map.put(counter.toString(), matcher.group(1) + matcher.group(2) + matcher.group(3));
-			criteriaMap.put(counter.toString(), new SearchCriteria(matcher.group(1), matcher.group(2), matcher.group(3)));
+			parsedSearchMap.put(counter, matcher.group(1) + SEPARATOR + matcher.group(2) + SEPARATOR + matcher.group(3));
+			criteriaMap.put(counter, new SearchCriteria(matcher.group(1), matcher.group(2), matcher.group(3)));
 			counter++;
 		}
 		// replace all criteria in the search with respective numeric keys
-		for (String key: map.keySet()) {
-			search = search.replace(map.get(key), key);
+		for (Integer key: parsedSearchMap.keySet()) {
+			search = search.replace(parsedSearchMap.get(key), key.toString());
 		}
-		log.info(search);
+		log.info("symbolic search after parsing: {}", search);
 
 		// find all substrings in brackets, recursively replace all substrings with other symbolic search strings
-		while(search.contains("(") || search.contains(")")) {
+		while(parenthesisCount-- > 0) {
 			String found = findDeepestBracket(search);
-			map.put(counter.toString(), found.substring(1, found.length()-1));
+			parsedSearchMap.put(counter, found.substring(1, found.length()-1));
 			search = search.replace(found, counter.toString());
 			counter++;
 		}
+		log.info("number of total search subcomponents found: {}", counter - 1);
 
 		// build specifications from all keys in map
-		for (String key: map.keySet()) {
-			String val = map.get(key);
-			if (val.matches(searchRegex)) {
-				specMap.put(key, specProvider.getNewInstance(criteriaMap.get(key)));
-			} else {
+		for (Integer key: parsedSearchMap.keySet()) {
+			String val = parsedSearchMap.get(key);
+			if (val.matches(complexNumExpression)) {
 				specMap.put(key, buildSpecFromSymbolicString(val));
+			} else {
+				specMap.put(key, specProvider.getNewInstance(criteriaMap.get(key)));
 			}
 		}
 
-		return buildSpecFromSymbolicString(search);
+		return search;
+	}
+
+	private long validateParenthesis(String search) {
+		long numOfLB = search.chars().filter(ch -> ch == '(').count();
+		long numOfRB = search.chars().filter(ch -> ch == ')').count();
+		if (numOfLB != numOfRB) throw new RuntimeException("Search string invalid, parenthesis not matching.");
+		return numOfRB;
 	}
 
 	private Specification<T> buildSpecFromSymbolicString(String val) {
@@ -77,13 +92,13 @@ public class SpecificationBuilder<T> {
 		Specification<T> result = null;
 		String operation = "";
 		while (matcherNum.find()) {
-			String index = matcherNum.group(1);
+			Integer index = Integer.valueOf(matcherNum.group(1));
 			if (result == null) {
 				result = Specification.where(specMap.get(index));
 			} else {
 				if (operation.equalsIgnoreCase(AND_OPERATOR)) {
 					result = Specification.where(result).and(specMap.get(index));
-				} else {
+				} else if (operation.equalsIgnoreCase(OR_OPERATOR)) {
 					result = Specification.where(result).or(specMap.get(index));
 				}
 			}

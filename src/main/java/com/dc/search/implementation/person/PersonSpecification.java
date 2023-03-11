@@ -21,7 +21,7 @@ public class PersonSpecification extends BasicSearchSpecification implements Spe
 
 	@Override
 	public Predicate toPredicate(Root<Person> root, CriteriaQuery<?> query, CriteriaBuilder builder) {
-		return super.toPredicateBasic(root, query, builder, criteria);
+		return super.<Person>toPredicateBasic(root, query, builder, criteria);
 	}
 
 }
