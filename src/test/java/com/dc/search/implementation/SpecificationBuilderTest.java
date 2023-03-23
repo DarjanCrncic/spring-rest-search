@@ -9,12 +9,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class SpecificationBuilderTest {
 
-	private PersonSpecificationProvider specProvider;
 	private SpecificationBuilder<Person> specBuilder;
 
 	@BeforeEach
 	void setUp() {
-		specProvider = new PersonSpecificationProvider();
+		PersonSpecificationProvider specProvider = new PersonSpecificationProvider();
 		specBuilder = new SpecificationBuilder<>(specProvider);
 	}
 
@@ -74,5 +73,111 @@ class SpecificationBuilderTest {
 		String result = specBuilder.parseSearchString(search);
 
 		assertEquals("1", result);
+	}
+
+	@Test
+	void testParseSearch6() {
+		String search = "age~greaterThan~25~and~age~lessThan~40";
+		String result = specBuilder.parseSearchString(search);
+
+		assertEquals("1~and~2", result);
+		assertEquals("age~greaterThan~25", specBuilder.parsedSearchMap.get(1));
+		assertEquals("age~lessThan~40", specBuilder.parsedSearchMap.get(2));
+	}
+
+	@Test
+	void testParseSearch7() {
+		String search = "firstName~contains~doe";
+		String result = specBuilder.parseSearchString(search);
+
+		assertEquals("1", result);
+		assertEquals("firstName~contains~doe", specBuilder.parsedSearchMap.get(1));
+	}
+
+	@Test
+	void testParseSearch8() {
+		String search = "firstName~equals~john~or~lastName~equals~smith~or~age~lessThanOrEqual~30";
+		String result = specBuilder.parseSearchString(search);
+
+		assertEquals("1~or~2~or~3", result);
+		assertEquals("firstName~equals~john", specBuilder.parsedSearchMap.get(1));
+		assertEquals("lastName~equals~smith", specBuilder.parsedSearchMap.get(2));
+		assertEquals("age~lessThanOrEqual~30", specBuilder.parsedSearchMap.get(3));
+	}
+
+	@Test
+	void testParseSearch9() {
+		String search = "firstName~equals~john~and~(lastName~equals~smith~or~age~lessThanOrEqual~30)";
+		String result = specBuilder.parseSearchString(search);
+
+		assertEquals("1~and~4", result);
+		assertEquals("firstName~equals~john", specBuilder.parsedSearchMap.get(1));
+		assertEquals("lastName~equals~smith", specBuilder.parsedSearchMap.get(2));
+		assertEquals("age~lessThanOrEqual~30", specBuilder.parsedSearchMap.get(3));
+	}
+
+	@Test
+	void testParseSearch10() {
+		String search = "(firstName~equals~john~or~firstName~equals~jane)~and~lastName~equals~smith";
+		String result = specBuilder.parseSearchString(search);
+
+		assertEquals("4~and~3", result);
+		assertEquals("1~or~2", specBuilder.parsedSearchMap.get(4));
+		assertEquals("firstName~equals~john", specBuilder.parsedSearchMap.get(1));
+		assertEquals("firstName~equals~jane", specBuilder.parsedSearchMap.get(2));
+		assertEquals("lastName~equals~smith", specBuilder.parsedSearchMap.get(3));
+	}
+
+	@Test
+	void testParseSearch11() {
+		String search = "(firstName~startsWith~j~or~firstName~endsWith~n)~and~age~lessThanOrEqual~30";
+		String result = specBuilder.parseSearchString(search);
+
+		assertEquals("4~and~3", result);
+		assertEquals("1~or~2", specBuilder.parsedSearchMap.get(4));
+		assertEquals("firstName~startsWith~j", specBuilder.parsedSearchMap.get(1));
+		assertEquals("firstName~endsWith~n", specBuilder.parsedSearchMap.get(2));
+		assertEquals("age~lessThanOrEqual~30", specBuilder.parsedSearchMap.get(3));
+	}
+
+	@Test
+	void testParseSearch12() {
+		String search = "(firstName~contains~doe~or~lastName~contains~smith)~or~(age~greaterThanOrEqual~30~and~age~lessThanOrEqual~40)";
+		String result = specBuilder.parseSearchString(search);
+
+		assertEquals("5~or~6", result);
+		assertEquals("1~or~2", specBuilder.parsedSearchMap.get(5));
+		assertEquals("3~and~4", specBuilder.parsedSearchMap.get(6));
+		assertEquals("firstName~contains~doe", specBuilder.parsedSearchMap.get(1));
+		assertEquals("lastName~contains~smith", specBuilder.parsedSearchMap.get(2));
+		assertEquals("age~greaterThanOrEqual~30", specBuilder.parsedSearchMap.get(3));
+		assertEquals("age~lessThanOrEqual~40", specBuilder.parsedSearchMap.get(4));
+	}
+
+	@Test
+	void testParseSearch13() {
+		String search = "(firstName~equals~john~and~lastName~equals~doe)~or~(firstName~equals~jane~and~lastName~equals~smith)";
+		String result = specBuilder.parseSearchString(search);
+
+		assertEquals("5~or~6", result);
+		assertEquals("1~and~2", specBuilder.parsedSearchMap.get(5));
+		assertEquals("3~and~4", specBuilder.parsedSearchMap.get(6));
+		assertEquals("firstName~equals~john", specBuilder.parsedSearchMap.get(1));
+		assertEquals("lastName~equals~doe", specBuilder.parsedSearchMap.get(2));
+		assertEquals("firstName~equals~jane", specBuilder.parsedSearchMap.get(3));
+		assertEquals("lastName~equals~smith", specBuilder.parsedSearchMap.get(4));
+	}
+
+	@Test
+	void testParseSearch14() {
+		String search = "firstName~contains~n~or~lastName~contains~n~or~(age~greaterThan~40~and~age~lessThan~60)";
+		String result = specBuilder.parseSearchString(search);
+
+		assertEquals("1~or~2~or~5", result);
+		assertEquals("firstName~contains~n", specBuilder.parsedSearchMap.get(1));
+		assertEquals("lastName~contains~n", specBuilder.parsedSearchMap.get(2));
+		assertEquals("3~and~4", specBuilder.parsedSearchMap.get(5));
+		assertEquals("age~greaterThan~40", specBuilder.parsedSearchMap.get(3));
+		assertEquals("age~lessThan~60", specBuilder.parsedSearchMap.get(4));
 	}
 }

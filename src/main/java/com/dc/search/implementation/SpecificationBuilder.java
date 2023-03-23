@@ -16,8 +16,9 @@ public class SpecificationBuilder<T> {
 	public static final String AND_OPERATOR = "and";
 	public static final String SEPARATOR = "~";
 	public static final String searchRegex = "(\\b(?!and|or|AND|OR\\b)[\\w\\.]+)~(\\w+)~([\\w|\\-|\\/|\\,|\\.]+)";
-	public static final String numRegex = "(\\d)~?(\\b(and|or|AND|OR\\b))?";
-	public static final String complexNumExpression = "(\\d)~(\\b(and|or|AND|OR\\b))~(\\d)";
+	public static final String numRegex = "(\\d+)~?(\\b(and|or|AND|OR\\b))?";
+	public static final String complexNumExpression = "(\\d+)~(\\b(and|or|AND|OR\\b))~(\\d+)";
+	public static final String extraParenthesesRegex = "\\((\\d+)\\)";
 
 
 	Map<Integer, String> parsedSearchMap = new LinkedHashMap<>(); // stores string subcomponents of the search
@@ -37,9 +38,6 @@ public class SpecificationBuilder<T> {
 	}
 
 	protected String parseSearchString(String search) {
-		long parenthesisCount = validateParenthesis(search);
-		log.info("parenthesis count: {}", parenthesisCount);
-
 		Pattern pattern = Pattern.compile(searchRegex);
 		Matcher matcher = pattern.matcher(search);
 		Integer counter = 1;
@@ -54,8 +52,11 @@ public class SpecificationBuilder<T> {
 		for (Integer key: parsedSearchMap.keySet()) {
 			search = search.replace(parsedSearchMap.get(key), key.toString());
 		}
+		search = search.replaceAll(extraParenthesesRegex, "$1");
 		log.info("symbolic search after parsing: {}", search);
 
+		long parenthesisCount = validateParenthesis(search);
+		log.info("parenthesis count: {}", parenthesisCount);
 		// find all substrings in brackets, recursively replace all substrings with other symbolic search strings
 		while(parenthesisCount-- > 0) {
 			String found = findDeepestBracket(search);
@@ -63,6 +64,7 @@ public class SpecificationBuilder<T> {
 			search = search.replace(found, counter.toString());
 			counter++;
 		}
+		log.info("search after parenthesis replacement: {}", search);
 		log.info("number of total search subcomponents found: {}", counter - 1);
 
 		// build specifications from all keys in map

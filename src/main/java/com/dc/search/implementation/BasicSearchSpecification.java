@@ -31,7 +31,6 @@ public abstract class BasicSearchSpecification {
 
 	public <T> Predicate toPredicateBasic(Root<T> root, CriteriaQuery<?> query, CriteriaBuilder cb,
 									  SearchCriteria criteria) {
-
 		final String key = criteria.getKey();
 		final Object value = getValue(root, key, criteria.getValue());
 
@@ -132,7 +131,7 @@ public abstract class BasicSearchSpecification {
 	}
 
 	private <T> Predicate withLessOrEquals(String key, Object value, Root<T> root, CriteriaBuilder cb) {
-		final Expression<Object> expression = extractEntity(key, root);
+		final Expression<Object> expression = this.extractEntity(key, root);
 		final Class<?> javaType = expression.getJavaType();
 		if (javaType == LocalDate.class) {
 			return cb.lessThanOrEqualTo(expression.as(LocalDate.class), (LocalDate) value);
