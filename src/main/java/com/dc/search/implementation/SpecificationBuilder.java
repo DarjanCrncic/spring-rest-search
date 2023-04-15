@@ -55,7 +55,7 @@ public class SpecificationBuilder<T> {
 		search = search.replaceAll(extraParenthesesRegex, "$1");
 		log.info("symbolic search after parsing: {}", search);
 
-		long parenthesisCount = validateParenthesis(search);
+		long parenthesisCount = validateAndCountParenthesis(search);
 		log.info("parenthesis count: {}", parenthesisCount);
 		// find all substrings in brackets, recursively replace all substrings with other symbolic search strings
 		while(parenthesisCount-- > 0) {
@@ -80,10 +80,12 @@ public class SpecificationBuilder<T> {
 		return search;
 	}
 
-	private long validateParenthesis(String search) {
+	private long validateAndCountParenthesis(String search) {
 		long numOfLB = search.chars().filter(ch -> ch == '(').count();
 		long numOfRB = search.chars().filter(ch -> ch == ')').count();
-		if (numOfLB != numOfRB) throw new RuntimeException("Search string invalid, parenthesis not matching.");
+		if (numOfLB != numOfRB) {
+			throw new IllegalArgumentException("Invalid search string: parentheses not matching.");
+		}
 		return numOfRB;
 	}
 
@@ -95,16 +97,20 @@ public class SpecificationBuilder<T> {
 		String operation = "";
 		while (matcherNum.find()) {
 			Integer index = Integer.valueOf(matcherNum.group(1));
-			if (result == null) {
-				result = Specification.where(specMap.get(index));
-			} else {
-				if (operation.equalsIgnoreCase(AND_OPERATOR)) {
-					result = Specification.where(result).and(specMap.get(index));
-				} else if (operation.equalsIgnoreCase(OR_OPERATOR)) {
-					result = Specification.where(result).or(specMap.get(index));
+			if (specMap.containsKey(index)) { // Check if index exists in the map
+				if (result == null) {
+					result = Specification.where(specMap.get(index));
+				} else {
+					if (operation.equalsIgnoreCase(AND_OPERATOR)) {
+						result = Specification.where(result).and(specMap.get(index));
+					} else if (operation.equalsIgnoreCase(OR_OPERATOR)) {
+						result = Specification.where(result).or(specMap.get(index));
+					}
 				}
+				operation = matcherNum.group(2);
+			} else {
+				throw new IllegalArgumentException("Invalid symbolic string, index " + index + " not found in map.");
 			}
-			operation = matcherNum.group(2);
 		}
 		return result;
 	}
