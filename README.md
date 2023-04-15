@@ -9,6 +9,6 @@ Supported features are following:
  1. multiple different operations on different field types
     - LIKE, EQ, NOT_EQ, GT, LT, LTE, GTE, IN, NOT_IN
  2. grouping conditions with parentheses and logical operators (AND and OR)
-    - "(name\~like\~John\~or\~lastName\~like\~Doe)~and~(name\~like\~Mia\~or\~lastName\~eq\~Chen)"
+    - "(name\~like\~John\~or\~lastName\~like\~Doe)\~and\~(name\~like\~Mia\~or\~lastName\~eq\~Chen)"
  3. using child and parent entities fields in the search
     - "parent.name\~like\~Philip"
