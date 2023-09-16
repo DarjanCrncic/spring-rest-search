@@ -180,4 +180,13 @@ class SpecificationBuilderTest {
 		assertEquals("age~greaterThan~40", specBuilder.parsedSearchMap.get(3));
 		assertEquals("age~lessThan~60", specBuilder.parsedSearchMap.get(4));
 	}
+
+	@Test
+	void testParseSearch15() {
+		String search = "parentFolder~EQ~1~AND~immutable~EQ~false~and~(objectName~LIKE~asd~OR~creator~LIKE~asd~OR~type~LIKE~asd~OR~description~LIKE~asd)";
+		String result = specBuilder.parseSearchString(search);
+
+		assertEquals("1~AND~2~AND~7", result.toUpperCase());
+		assertEquals("3~OR~4~OR~5~OR~6", specBuilder.parsedSearchMap.get(7));
+	}
 }

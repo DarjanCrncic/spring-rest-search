@@ -70,7 +70,7 @@ public class SpecificationBuilder<T> {
 		// build specifications from all keys in map
 		for (Integer key: parsedSearchMap.keySet()) {
 			String val = parsedSearchMap.get(key);
-			if (val.matches(complexNumExpression)) {
+			if (val.matches(complexNumExpression) || criteriaMap.get(key) == null) {
 				specMap.put(key, buildSpecFromSymbolicString(val));
 			} else {
 				specMap.put(key, specProvider.getNewInstance(criteriaMap.get(key)));
